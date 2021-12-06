@@ -185,6 +185,7 @@ export default class Main {
 		let users = [];
 
 		console.log("result APi", JSON.stringify(resultAPI, null, 2));
+
 		resultAPI.map((each) => {
 			each.timesheetRow.map((item) => {
 				users.push(item.user.toString());
