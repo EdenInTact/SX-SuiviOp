@@ -152,9 +152,9 @@ export function getNewHtml() {
 			"<script>google.script.host.close();</script>"
 		);
 		SpreadsheetApp.getUi().showSidebar(html2);
+
 		// 2. set user list dropdown
-		main.setUser();
-		return;
+		return main.setUserTimesheetRow();
 	} else {
 		// 1. reload side bar
 		var html = HtmlService.createTemplateFromFile("src/Module/Page")

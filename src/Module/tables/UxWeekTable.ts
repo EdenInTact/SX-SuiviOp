@@ -11,7 +11,7 @@ export default class UxWeekTable extends AbstractTable {
 	constructor(main: Main) {
 		let cache: Props;
 		super(main, cache, "uxTable");
-		// this.init("CONSOMMÉ EN JOURS UX/UI", "Nb de jours restants", "semaineUX");
+		this.init("CONSOMMÉ EN JOURS UX/UI", "Nb de jours restants", "semaineUX");
 		this.props.key = main.properties.keyUX as string;
 		CacheService.getScriptCache().put("uxTable", JSON.stringify(this.props));
 	}

@@ -19,7 +19,7 @@ export default class API {
 		return this._token;
 	}
 
-	getUsers(arrayTimerow): object {
+	getUsersTimesheetRow(arrayTimerow): object {
 		this.authenticate();
 		let options: any = {
 			method: "get",

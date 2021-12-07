@@ -8,6 +8,10 @@ export interface Coordinates {
 		row: number;
 	};
 }
+export interface ColRow {
+	col: number;
+	row: number;
+}
 
 export interface ConsultantList {
 	list: Consultant[];
@@ -16,7 +20,7 @@ export interface ConsultantList {
 }
 
 export interface Consultant {
-	name: Coordinates;
+	name: ColRow;
 	count: Coordinates;
 	total: Coordinates;
 }

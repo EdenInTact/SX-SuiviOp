@@ -114,8 +114,6 @@ export default class Main {
 				"phases",
 				JSON.stringify(phases)
 			);
-
-			return;
 		} else if (e) {
 			// 1. set sprint and week time start and end
 			let lastChange = e.range.getA1Notation();
@@ -126,43 +124,52 @@ export default class Main {
 				.getRangeByName("semaineUX")
 				.getA1Notation();
 
-			console.log(lastChange, sprintDev, semaineUX);
-
 			// 2. MAJ sprint ou semaine
 			if (lastChange === sprintDev) {
-				sprintcellStart = ss.getRange("B22").getValue();
-				console.log("sprintcellStart === >", sprintcellStart);
+				this._isSprint = true;
+				let col = 0;
+				this.sprintTable.props.iterations.list.forEach((sprint, index) => {
+					if (
+						e.range.getValue() ===
+						this.sprintTable.props.content[sprint.name.start.row][
+							sprint.name.start.col
+						]
+					) {
+						col = index;
+					}
+				});
+				sprintcellEnd =
+					this._sprintTable.props.content[
+						this.sprintTable.props.iterations.list[col].end.start.row
+					][this.sprintTable.props.iterations.list[col].end.start.col];
+				sprintcellStart =
+					this._sprintTable.props.content[
+						this.sprintTable.props.iterations.list[col].start.start.row
+					][this.sprintTable.props.iterations.list[col].start.start.col];
+			} else if (lastChange === semaineUX) {
+				this._weekTable.selectedWeek = e.range;
+				this._isSprint = false;
+				let col = 0;
+				this.weekTable.props.iterations.list.forEach((week, index) => {
+					if (
+						e.range.getValue() ===
+						this.weekTable.props.content[week.name.start.row][
+							week.name.start.col
+						]
+					) {
+						col = index;
+					}
+				});
+				sprintcellEnd =
+					this._weekTable.props.content[
+						this.weekTable.props.iterations.list[col].end.start.row
+					][this.weekTable.props.iterations.list[col].end.start.col];
 
-				sprintcellEnd = ss.getRange("G23").getValue();
-				console.log("sprintcellEnd === >", sprintcellEnd);
+				sprintcellStart =
+					this._weekTable.props.content[
+						this.weekTable.props.iterations.list[col].start.start.row
+					][this.weekTable.props.iterations.list[col].start.start.col];
 			}
-
-			//TODO a faire pour les semaines UX
-			// else if (lastChange === semaineUX) {
-			// 	this._weekTable.selectedWeek = e.range;
-			// 	this._isSprint = false;
-			// 	let col = 0;
-			// 	this.weekTable.props.iterations.list.forEach((week, index) => {
-			// 		if (
-			// 			e.range.getValue() ===
-			// 			this.weekTable.props.content[week.name.start.row][
-			// 				week.name.start.col
-			// 			]
-			// 		) {
-			// 			col = index;
-			// 		}
-			// 	});
-
-			// 	sprintcellEnd =
-			// 		this._weekTable.props.content[
-			// 			this.weekTable.props.iterations.list[col].end.start.row
-			// 		][this.weekTable.props.iterations.list[col].end.start.col];
-
-			// 	sprintcellStart =
-			// 		this._weekTable.props.content[
-			// 			this.weekTable.props.iterations.list[col].start.start.row
-			// 		][this.weekTable.props.iterations.list[col].start.start.col];
-			// }
 
 			//*********** Set Property **********//
 			this._properties.dropdown = e.range.getA1Notation();
@@ -177,17 +184,22 @@ export default class Main {
 		}
 	}
 
-	setUser() {
+	setUserTimesheetRow() {
 		let api = new API();
 		let main = new Main();
 
-		let resultAPI: any = api.getUsers(JSON.parse(this._properties.projectrow));
+		let resultAPI: any = api.getUsersTimesheetRow(
+			JSON.parse(this._properties.projectrow)
+		);
 		let users = [];
+		let timesheetRow: object[] = [];
+		resultAPI.map((eachRow: { timesheetRow: any[] }) => {
+			console.log(eachRow.timesheetRow);
+			timesheetRow.push({
+				[eachRow.timesheetRow[0].user]: eachRow.timesheetRow,
+			});
 
-		console.log("result APi", JSON.stringify(resultAPI, null, 2));
-
-		resultAPI.map((each) => {
-			each.timesheetRow.map((item) => {
+			eachRow.timesheetRow.map((item) => {
 				users.push(item.user.toString());
 			});
 		});
@@ -197,58 +209,40 @@ export default class Main {
 		);
 		main.weekTable.setNameDropdown(filteredUsersArray, 13);
 		main.sprintTable.setNameDropdown(filteredUsersArray, 24);
+
+		return PropertiesService.getScriptProperties().setProperty(
+			"projectrow",
+			JSON.stringify(timesheetRow)
+		);
 	}
 
 	/**
 	 * Retrieve corresponding SX in order to estimate days passed on project.
 	 * */
 	openSXNomenc() {
+		let main = new Main();
+
 		// retrieve year and month from properties
-		const timeStart: string = (
-			this._properties.time.start.year + this._properties.time.start.month
-		).toString();
+		const timeStart: Date = new Date(
+			this._properties.time.start.year,
+			this._properties.time.start.month,
+			this._properties.time.start.day
+		);
 
-		// if the sprint is on two different months, retrieve the second CRA
-		let timeEnd: string;
+		let timeEnd: Date;
 		if (this._properties.time.end.month && this._properties.time.end.year) {
-			timeEnd = (
-				this._properties.time.end.year + this._properties.time.end.month
-			).toString();
+			timeEnd = new Date(
+				this._properties.time.end.year,
+				this._properties.time.end.month,
+				this._properties.time.end.day
+			);
 		}
-		console.log("timeStart", timeStart);
-		console.log("timeEnd", timeEnd);
+		let timesheetRow = main._properties.projectrow;
 
-		// let timesheetRow =
-		// if (this._isSprint) {
-		// 	this._sprintTable.setWorkDays(craDateID, timeStart, timeEnd);
-		// } else {
-		// 	this._weekTable.setWorkDays(craDateID, timeStart, timeEnd);
-		// }
+		if (this._isSprint) {
+			this._sprintTable.setWorkDays(timesheetRow, timeStart, timeEnd);
+		} else {
+			this._weekTable.setWorkDays(timesheetRow, timeStart, timeEnd);
+		}
 	}
-
-	// openCraNomenc() {
-	//retrieve year and month from properties
-	// const timeStart: string =
-	// 	this._properties.time.start.year + "" + this._properties.time.start.month;
-	// // if the sprint is on two different months, retrieve the second CRA
-	// let timeEnd: string;
-	// if (this._properties.time.end.month && this._properties.time.end.year) {
-	// 	timeEnd =
-	// 		this._properties.time.end.year + "" + this._properties.time.end.month;
-	// }
-	// console.log("code", timeStart);
-	// console.log("code2", timeEnd);
-	// //The nomenclature file ID listed all CRA files -> ID is 19dNWRaX3ycWAYm-ftmjuRIJ6uQ1UUZ7bx_nJYhQHTIA
-	// const ss: Spreadsheet.Spreadsheet = SpreadsheetApp.openById(
-	// 	"19dNWRaX3ycWAYm-ftmjuRIJ6uQ1UUZ7bx_nJYhQHTIA"
-	// );
-	// const range: Spreadsheet.Range = ss.getActiveSheet().getDataRange();
-	// const craDateID: string[][] = range.getValues();
-	// // console.log("cells", JSON.stringify(craDateID, null, 3));
-	// if (this._isSprint) {
-	// 	this._sprintTable.setWorkDays(craDateID, timeStart, timeEnd);
-	// } else {
-	// 	this._weekTable.setWorkDays(craDateID, timeStart, timeEnd);
-	// }
-	// }
 }

@@ -1,9 +1,10 @@
 import Spreadsheet = GoogleAppsScript.Spreadsheet;
-import CRA from "../utils/CRA";
 import SpreadSheet from "../utils/SpreadSheet";
 import ProjectProperties from "../utils/ProjectProperties";
 import Main from "../../Actions";
 import { Consultant, Iteration, Props } from "../../Types";
+import { columnToLetter } from "../../Menu";
+let ss = SpreadsheetApp.getActive();
 
 export default abstract class AbstractTable {
 	// ****************************************************************************************** \\
@@ -155,16 +156,15 @@ export default abstract class AbstractTable {
 			start: { col: 0, row: 3 },
 			end: { col: -1, row: this.props.totalRow - this.props.firstRow },
 		};
+
+		//retrieve coord of name of consultant dropdow list
 		for (let i = 0; i < this.props.consultants.length; i++) {
 			let consultant: Consultant = {
 				name: undefined,
 				count: undefined,
 				total: undefined,
 			};
-			consultant.name = {
-				start: { col: 0, row: 3 + i },
-				end: { col: 0, row: 3 + i },
-			};
+			consultant.name = { col: 1, row: 3 + i };
 			consultant.count = {
 				start: { col: 1, row: 3 + i },
 				end: { col: this.props.content[0].length - 2, row: 3 + i },
@@ -180,6 +180,8 @@ export default abstract class AbstractTable {
 			start: { col: 1, row: 0 },
 			end: { col: -2, row: this.props.totalRow - this.props.firstRow },
 		};
+
+		//retrieve coord of sprint in table
 		for (let i = 0; i < this.props.iterations.length; i++) {
 			let iteration: Iteration = {
 				name: undefined,
@@ -214,7 +216,6 @@ export default abstract class AbstractTable {
 		this.updateCache();
 	}
 
-	//********* VALIDE ********/
 	setNameDropdown(usersArray: string[], firstRow: number) {
 		//Set name of worker in dropdown
 		let namesRange = this.spreadsheet.suiviSheet.getRange(firstRow, 1, 3);
@@ -222,9 +223,51 @@ export default abstract class AbstractTable {
 			SpreadsheetApp.newDataValidation().requireValueInList(usersArray).build();
 		namesRange.setDataValidation(validationRule);
 	}
-	//***************************/
-	setWorkDays(cells, code, code2) {
-		// console.log("cells", cells, "code", code, "code2", code2);
+
+	setWorkDays(timesheetRow: string, timeStart: string, timeEnd: string) {
+		let consultantArray = [];
+
+		this.props.consultants.list.map((each) => {
+			var eachConsultant = this.spreadsheet.suiviSheet
+				.getRange(
+					this.props.corner.top.left.getRow() + each.name.row,
+					each.name.col
+				)
+				.getValue();
+			if (eachConsultant) {
+				consultantArray.push({
+					user: eachConsultant,
+					row: this.props.corner.top.left.getRow() + each.name.row,
+				});
+			}
+		});
+		let intervalArray = [];
+		let workerTimeArray: any[][] = [];
+		let timesheetArray = JSON.parse(timesheetRow);
+		consultantArray.forEach((consultant) => {
+			timesheetArray.forEach((timesheet) => {
+				if (timesheet[consultant.user]) {
+					timesheet[consultant.user].filter((item: any) => {
+						if (
+							new Date(item.dateTime).getTime() >=
+								new Date(timeStart).getTime() &&
+							new Date(item.dateTime).getTime() <= new Date(timeEnd).getTime()
+						) {
+							intervalArray.push({
+								user: consultant.user,
+								row: consultant.row,
+								date: item.dateTime,
+								qty: item.qty,
+							});
+						}
+					});
+				}
+			});
+			return workerTimeArray.push(intervalArray);
+		});
+
+		console.log("workerTimeArray", workerTimeArray);
+
 		let range = this._spreadsheet.suiviSheet.getRange(
 			this.props.corner.top.left.getRow(),
 			1,
@@ -232,37 +275,27 @@ export default abstract class AbstractTable {
 			this.props.corner.top.right.getColumn()
 		);
 
-		// console.log("range", range);
 		let sprintCol = range
 			.createTextFinder(this.props.selection.getValue())
 			.findNext()
 			.getColumn();
 
-		console.log("sprintCol", sprintCol);
-
-		this.props.consultants.list.forEach((dev) => {
-			this.props.iterations.list.forEach((it) => {
-				this.props.content[dev.count.start.row][sprintCol - 1] = 0;
+		workerTimeArray.forEach((workerInfo) => {
+			let qty = 0;
+			let rowWorker;
+			workerInfo.forEach((info) => {
+				qty += info.qty;
+				rowWorker = info.row;
 			});
+			let dayVal = qty / 8;
+			console.log("rowWorker", rowWorker);
+			console.log("dayVal", dayVal);
+			ss.getSheetByName("Suivi opérationnel")
+				.getRange(rowWorker, sprintCol)
+				.setValue(dayVal);
+
+			// this.props.table.setCell(rowWorker, sprintCol, dayVal);
 		});
-		// for (let n = 0; n < cells.length; ++n) {
-		// 	//if the month and year
-		// 	if (cells[n][2] === code || cells[n][2] === code2) {
-		// 		CRA.openCra(cells, n, this.props.key, this);
-		// 	}
-		// }
-		let values = this.getRange(
-			4,
-			2,
-			this.props.totalRow - this.props.firstRow,
-			this.props.lastCol - 1
-		);
-
-		console.log("values", values);
-
-		this.props.table
-			.offset(3, 1, this.props.consultants.length, this.props.lastCol - 2)
-			.setValues(values);
 	}
 
 	//*************** Mathematique function ***********/

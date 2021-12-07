@@ -11,7 +11,7 @@ export default class SprintTable extends AbstractTable {
 	constructor(main: Main) {
 		let cache: Props;
 		super(main, cache, "sprintTable");
-		// this.init("CONSOMMÉ EN JOURS DEV", "TOTAL", "sprintDev");
+		this.init("CONSOMMÉ EN JOURS DEV", "TOTAL", "sprintDev");
 		this.props.key = main.properties.keyDev as string;
 		CacheService.getScriptCache().put(
 			"sprintTable",
