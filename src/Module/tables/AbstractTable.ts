@@ -3,7 +3,6 @@ import SpreadSheet from "../utils/SpreadSheet";
 import ProjectProperties from "../utils/ProjectProperties";
 import Main from "../../Actions";
 import { Consultant, Iteration, Props } from "../../Types";
-import { columnToLetter } from "../../Menu";
 let ss = SpreadsheetApp.getActive();
 
 export default abstract class AbstractTable {
@@ -216,17 +215,28 @@ export default abstract class AbstractTable {
 		this.updateCache();
 	}
 
-	setNameDropdown(usersArray: string[], firstRow: number) {
-		//Set name of worker in dropdown
-		let namesRange = this.spreadsheet.suiviSheet.getRange(firstRow, 1, 3);
-		const validationRule: Spreadsheet.DataValidation =
-			SpreadsheetApp.newDataValidation().requireValueInList(usersArray).build();
-		namesRange.setDataValidation(validationRule);
+	setNameDropdown(usersArray: string[] | "") {
+		let namesRange = this.spreadsheet.suiviSheet.getRange(
+			this.props.firstRow + 3,
+			1,
+			this.props.consultants.length
+		);
+		if (usersArray !== "") {
+			//Set name of worker in dropdown
+			const validationRule: Spreadsheet.DataValidation =
+				SpreadsheetApp.newDataValidation()
+					.requireValueInList(usersArray)
+					.build();
+			namesRange.setDataValidation(validationRule);
+		} else {
+			namesRange.clearContent();
+			namesRange.setDataValidation(null);
+		}
 	}
 
 	setWorkDays(timesheetRow: string, timeStart: string, timeEnd: string) {
 		let consultantArray = [];
-
+		//1. get row and name of each consultant
 		this.props.consultants.list.map((each) => {
 			var eachConsultant = this.spreadsheet.suiviSheet
 				.getRange(
@@ -241,33 +251,8 @@ export default abstract class AbstractTable {
 				});
 			}
 		});
-		let intervalArray = [];
-		let workerTimeArray: any[][] = [];
-		let timesheetArray = JSON.parse(timesheetRow);
-		consultantArray.forEach((consultant) => {
-			timesheetArray.forEach((timesheet) => {
-				if (timesheet[consultant.user]) {
-					timesheet[consultant.user].filter((item: any) => {
-						if (
-							new Date(item.dateTime).getTime() >=
-								new Date(timeStart).getTime() &&
-							new Date(item.dateTime).getTime() <= new Date(timeEnd).getTime()
-						) {
-							intervalArray.push({
-								user: consultant.user,
-								row: consultant.row,
-								date: item.dateTime,
-								qty: item.qty,
-							});
-						}
-					});
-				}
-			});
-			return workerTimeArray.push(intervalArray);
-		});
 
-		console.log("workerTimeArray", workerTimeArray);
-
+		//2. get column of sprint
 		let range = this._spreadsheet.suiviSheet.getRange(
 			this.props.corner.top.left.getRow(),
 			1,
@@ -280,21 +265,51 @@ export default abstract class AbstractTable {
 			.findNext()
 			.getColumn();
 
+		//3. filter timesheet row to keep only who's between start and end time
+		let workerTimeArray = [];
+		let timesheeRowArr = JSON.parse(timesheetRow);
+
+		let timesheetFltr = timesheeRowArr.filter((item) => {
+			let dateTime = item.dateTime.split("-").join("");
+			return dateTime <= timeEnd && dateTime >= timeStart;
+		});
+
+		//4. create a array with row, user name and qty worked
+		consultantArray.forEach((consultant) => {
+			let userName = consultant.user.split("-")[0].toString();
+			let workertimesheet = [];
+			timesheetFltr.map((timesheet) => {
+				if (timesheet.userName.indexOf(userName)) {
+					workertimesheet.push({
+						row: consultant.row,
+						qty: timesheet.qty,
+						user: userName,
+						date: timesheet.dateTime,
+					});
+				}
+			});
+
+			workertimesheet.length > 0
+				? workerTimeArray.push(workertimesheet)
+				: workerTimeArray.push([
+						{ row: consultant.row, qty: 0, user: userName },
+				  ]);
+		});
+
+
+		//5. setvalue of day worked for each 
 		workerTimeArray.forEach((workerInfo) => {
 			let qty = 0;
 			let rowWorker;
-			workerInfo.forEach((info) => {
-				qty += info.qty;
-				rowWorker = info.row;
+			workerInfo.map((item) => {
+				qty += item.qty;
+				rowWorker = item.row;
 			});
 			let dayVal = qty / 8;
-			console.log("rowWorker", rowWorker);
-			console.log("dayVal", dayVal);
+
 			ss.getSheetByName("Suivi opérationnel")
 				.getRange(rowWorker, sprintCol)
 				.setValue(dayVal);
-
-			// this.props.table.setCell(rowWorker, sprintCol, dayVal);
 		});
 	}
 

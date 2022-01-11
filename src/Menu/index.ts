@@ -46,6 +46,7 @@ export default class Menu {
 
 	addSprint() {}
 	addWeek() {}
+	cleanTable(){}
 }
 
 export function addDev() {
@@ -125,58 +126,47 @@ export function addUx() {
 		.setFormula(`=SUM(${total.getA1Notation()})`);
 }
 
-//*********************************************************/
-
 function addDevPeriod(isSprint: boolean) {
 	let main = new Main();
 	let sprintTable = main.sprintTable;
 	let spreadsheet = main.spreadsheet;
+	let ss: GSpreadsheet.Spreadsheet = SpreadsheetApp.getActive();
 
-	//add 3 colums (for date) on BACKLOG Sheet
 	let lastColBacklog = spreadsheet.backlogSheet.getLastColumn();
 	spreadsheet.backlogSheet.insertColumns(lastColBacklog, 3);
-
 	let SprintToCopy = spreadsheet.backlogSheet.getRange(
 		2,
 		lastColBacklog - 6,
 		spreadsheet.backlogSheet.getLastRow() - 2,
 		3
 	);
-
+	let prevSprint = spreadsheet.backlogSheet.getRange(2, lastColBacklog - 1);
 	let iterations = spreadsheet.backlogSheet.getRange(
 		2,
 		1,
 		5,
 		spreadsheet.backlogSheet.getMaxColumns()
 	);
-
-	// get number of sprint
 	let sprintNumbers = iterations
 		.getValues()[0]
 		.filter((it) => typeof it === "number");
-
-	//get number of recette
 	let recettes = iterations
 		.getValues()[0]
 		.filter((it) => typeof it === "string" && it.match("recette"));
-
-	//get date of sprint and recette
 	let dates = iterations.getValues()[2].filter((it) => it instanceof Date);
-
 	SprintToCopy.copyTo(
 		spreadsheet.backlogSheet.getRange(2, lastColBacklog, 5, 3)
 	);
-
 	let rangeToChange = spreadsheet.backlogSheet.getRange(
 		2,
 		lastColBacklog,
 		2,
 		1
 	);
-
 	let formulasToChange = rangeToChange.getFormulas();
 	let sprintCol = formulasToChange[0][0].substr(1, 2);
-	let ColNum = letterToColumn(sprintCol) - 1;
+	let ColNum = letterToColumn(sprintCol);
+	ColNum--;
 	let newSprint = formulasToChange[0][0].replace(
 		sprintCol,
 		columnToLetter(ColNum)
@@ -185,15 +175,12 @@ function addDevPeriod(isSprint: boolean) {
 	let dateCol = formulasToChange[1][0].substr(1, 2);
 	ColNum = letterToColumn(dateCol);
 	ColNum += 2;
-
-	//set date for new sprint
 	let newDate = formulasToChange[1][0].replace(dateCol, columnToLetter(ColNum));
 	formulasToChange[1][0] = newDate;
 	rangeToChange.setFormulas(formulasToChange);
 	let prevSprintWidth = spreadsheet.backlogSheet.getColumnWidth(
 		lastColBacklog - 4
 	);
-
 	for (let i = 0; i < 3; i++) {
 		spreadsheet.backlogSheet.setColumnWidth(
 			lastColBacklog + i,
@@ -205,7 +192,6 @@ function addDevPeriod(isSprint: boolean) {
 			.createTextFinder("itération")
 			.findNext()
 			.getColumn() + 1;
-
 	if (isSprint) {
 		spreadsheet.backlogSheet.getRange(2, lastColBacklog).setFormula(
 			`${spreadsheet.backlogSheet
@@ -224,7 +210,6 @@ function addDevPeriod(isSprint: boolean) {
 			.getRange(2, lastColBacklog)
 			.setValue("recette " + (recettes.length + 1));
 	}
-
 	let lastDate = dates[dates.length - 1];
 	let lastDateCol;
 	iterations.getValues()[2].forEach((date, index) => {
@@ -288,9 +273,9 @@ function addDevPeriod(isSprint: boolean) {
 	updateTable(
 		spreadsheet.suiviSheet,
 		"REALISE EN POINTS",
-		"CIBLE Ratio - Nb jours DEV+TU pour 1 point"
+		"Taux de remplissage prévisionnel"
 	);
-	updateTable(spreadsheet.suiviSheet, "NB ANOMALIES", "Anomalies restantes");
+	updateTable(spreadsheet.suiviSheet, "NB ANOMALIES", "Restantes");
 	let firstRow = spreadsheet.suiviSheet
 		.createTextFinder("CONSOMMÉ EN JOURS DEV")
 		.findNext()
@@ -324,12 +309,12 @@ function addDevPeriod(isSprint: boolean) {
 	spreadsheet.suiviSheet
 		.getRange(lastRow, lastCol - 1, 1, 1)
 		.setFormula(`=SUM(${sprintName}Count)`);
-	// sprintTable.props.table = sprintTable.props.table.offset(
-	// 	0,
-	// 	0,
-	// 	sprintTable.props.content.length,
-	// 	sprintTable.props.content[0].length + 1
-	// );
+	sprintTable.props.table = sprintTable.props.table.offset(
+		0,
+		0,
+		sprintTable.props.content.length,
+		sprintTable.props.content[0].length + 1
+	);
 	sprintTable.props.content = sprintTable.props.table.getValues();
 	sprintTable.updateCache();
 	main.runDev_();
@@ -338,7 +323,6 @@ function addDevPeriod(isSprint: boolean) {
 function addSprint() {
 	addDevPeriod(true);
 }
-
 function addRecette() {
 	addDevPeriod(false);
 }
@@ -349,56 +333,53 @@ function addWeek() {
 	let properties = main.properties;
 	let weekTable = main.weekTable;
 
-	console.log("weekTable", weekTable);
-	console.log("properties", properties);
+	let prevSprint = weekTable.props.table.offset(
+		0,
+		weekTable.props.table.getLastColumn() - 2,
+		weekTable.props.lastRow - weekTable.props.firstRow + 1
+	);
 
-	// let prevSprint = weekTable.props.table.offset(
-	// 	0,
-	// 	weekTable.props.table.getLastColumn() - 2,
-	// 	weekTable.props.lastRow - weekTable.props.firstRow + 1
-	// );
-
-	// prevSprint.copyTo(
-	// 	spreadsheet.suiviSheet.getRange(
-	// 		weekTable.props.firstRow,
-	// 		weekTable.props.lastCol,
-	// 		weekTable.props.lastRow - weekTable.props.firstRow + 1,
-	// 		1
-	// 	)
-	// );
+	prevSprint.copyTo(
+		spreadsheet.suiviSheet.getRange(
+			weekTable.props.firstRow,
+			weekTable.props.lastCol,
+			weekTable.props.lastRow - weekTable.props.firstRow + 1,
+			1
+		)
+	);
 	let added = spreadsheet.suiviSheet.getRange(
 		weekTable.props.firstRow,
 		weekTable.props.lastCol,
 		weekTable.props.lastRow - weekTable.props.firstRow + 1,
 		1
 	);
-	// let prevWeekNumber = parseInt(
-	// 	prevSprint.offset(0, 0, 1).getValue().match(/(\d+)/)
-	// );
+	let prevWeekNumber = parseInt(
+		prevSprint.offset(0, 0, 1).getValue().match(/(\d+)/)
+	);
 	let addedName = added.offset(0, 0, 1).getValue();
 	let addedNumber = parseInt(addedName.match(/(\d+)/));
-	// addedName = addedName.replace(
-	// 	String(prevWeekNumber),
-	// 	String(addedNumber + 1)
-	// );
-	// added.offset(0, 0, 1).setValue(addedName);
-	// let weekNameRange = spreadsheet.suiviSheet.getRange(
-	// 	weekTable.props.firstRow,
-	// 	weekTable.props.lastCol,
-	// 	1,
-	// 	1
-	// );
+	addedName = addedName.replace(
+		String(prevWeekNumber),
+		String(addedNumber + 1)
+	);
+	added.offset(0, 0, 1).setValue(addedName);
+	let weekNameRange = spreadsheet.suiviSheet.getRange(
+		weekTable.props.firstRow,
+		weekTable.props.lastCol,
+		1,
+		1
+	);
 	let weekCountRange = spreadsheet.suiviSheet.getRange(
 		weekTable.props.firstRow + 3,
 		weekTable.props.lastCol,
 		weekTable.props.lastRow - weekTable.props.firstRow - 6,
 		1
 	);
-	// // let weekName = weekNameRange.getValue().replace(/\s/g, "");
-	// spreadsheet.spreadsheet.setNamedRange(weekName + "Count", weekCountRange);
-	// spreadsheet.suiviSheet
-	// 	.getRange(weekTable.props.totalRow, weekTable.props.lastCol, 1, 1)
-	// 	.setFormula(`=SUM(${weekName}Count)`);
+	let weekName = weekNameRange.getValue().replace(/\s/g, "");
+	spreadsheet.spreadsheet.setNamedRange(weekName + "Count", weekCountRange);
+	spreadsheet.suiviSheet
+		.getRange(weekTable.props.totalRow, weekTable.props.lastCol, 1, 1)
+		.setFormula(`=SUM(${weekName}Count)`);
 	spreadsheet.spreadsheet.setNamedRange(
 		"semaineUX",
 		spreadsheet.spreadsheet.getRangeByName("semaineUX").offset(0, 1)
@@ -438,6 +419,7 @@ function updateFromBacklog(formulas: string[][], increment) {
 }
 
 function updateTable(sheet, textFinder, delimiter, recette?) {
+	console.log("textFinder", textFinder);
 	let firstRow = sheet.createTextFinder(textFinder).findNext().getRow();
 	let lastCol = sheet
 		.getRange(firstRow, 1, 1, sheet.getLastColumn())
@@ -445,6 +427,8 @@ function updateTable(sheet, textFinder, delimiter, recette?) {
 		.matchCase(true)
 		.findNext()
 		.getColumn();
+	console.log("delimiter", delimiter);
+
 	let lastRow = sheet
 		.getRange(firstRow, 1, 100, 1)
 		.createTextFinder(delimiter)
@@ -515,6 +499,8 @@ function updateTable(sheet, textFinder, delimiter, recette?) {
 		});
 	}
 }
+
+
 
 export function columnToLetter(column) {
 	var temp,

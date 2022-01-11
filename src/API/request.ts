@@ -19,23 +19,24 @@ export default class API {
 		return this._token;
 	}
 
-	getUsersTimesheetRow(arrayTimerow): object {
+	getUsersTimesheetRow(activityId): object {
 		this.authenticate();
 		let options: any = {
 			method: "get",
 			headers: { Authorization: `Bearer ${this._token}` },
 		};
-		let usersArray = [];
 
-		arrayTimerow.map((each) => {
-			let resp = UrlFetchApp.fetch(
-				`${this._apiPath}api/project_rows/${each.id}`,
-				options
-			);
-			usersArray.push(JSON.parse(resp));
-		});
+		let resp = UrlFetchApp.fetch(
+			`${this._apiPath}api/project_activities/${activityId}/project_rows`,
+			options
+		);
 
-		return usersArray;
+		let userArray = UrlFetchApp.fetch(
+			`${this._apiPath}api/project_activities/${activityId}/users`,
+			options
+		);
+
+		return { timesheetRow: JSON.parse(resp), userArray: JSON.parse(userArray) };
 	}
 
 	getProjectByCode(codeProject): any {
@@ -45,7 +46,7 @@ export default class API {
 			headers: { Authorization: `Bearer ${this._token}` },
 		};
 		let response = UrlFetchApp.fetch(
-			`${this._apiPath}api/projects?code=${codeProject}`,
+			`${this._apiPath}api/projects/code/${codeProject}`,
 			options
 		);
 

@@ -1,8 +1,5 @@
 import Main from "./Actions";
 import Menu from "./Menu";
-import SprintTable from "./Module/tables/SprintTable";
-import UxWeekTable from "./Module/tables/UxWeekTable";
-import ProjectProperties from "./Module/utils/ProjectProperties";
 
 let ss = SpreadsheetApp.getActive();
 
@@ -46,6 +43,7 @@ export function atChange(e): void {
 
 export function doGet() {
 	const main = new Main();
+	const menu = new Menu();
 	main.setProperties();
 
 	// 1. Delete all previous information from property
@@ -57,8 +55,13 @@ export function doGet() {
 	// 2. Delete all previous information from sheet
 	ss.getRange("F3").setValue(null);
 	ss.getRange("F4").setValue(null);
+	main.weekTable.setNameDropdown("");
+	main.sprintTable.setNameDropdown("");
+	
+	//3. Delete all time information of the sheet
+	main.cleanTable()
 
-	// 3. Open Side bar
+	// 4. Open Side bar
 	var html = HtmlService.createTemplateFromFile("src/Module/Page")
 		.evaluate()
 		.setTitle("Initier l'automatisation");
@@ -107,9 +110,8 @@ export function setActivity(activityIndex, ActivityText) {
 	ss.getRange("F4").setValue(ActivityText);
 
 	// 2. set property projectrow compared of activity chosen
-	let projectrow = JSON.stringify(
-		activity.projectActivity[activityIndex].projectRow
-	);
+	let projectrow = JSON.stringify(activity.projectActivity[activityIndex].id);
+
 	return PropertiesService.getScriptProperties().setProperty(
 		"projectrow",
 		projectrow
@@ -126,17 +128,17 @@ export function setActivityHTML() {
 		let activityArray = activity.projectActivity;
 		let string = [];
 
-		for (var y = 0; y < activityArray.length; y++) {
+		activityArray.forEach(element => {
 			string.push(
 				"<option value='" +
-					y.toString() +
+				element.toString() +
 					"'>" +
-					activityArray[y].label.toString() +
+					activityArray[element].label.toString() +
 					"</option>"
 			);
-		}
+		});
 		return (
-			'<div class="btn mb-3" > <label for="activity"> <b>Choisir l\'activité</b></label><select class="form-select form-select-lg mb-3" name="activity" id="activity" onChange="getSelectedValue(\'activity\')"><option value={null}>Selectionner une activite</option>' +
+			'<div class="btn mb-3" > <label for="activity" class="mb-2"> <b>Choisir l\'activité</b></label><select class="form-select form-select-lg mb-3" name="activity" id="activity" onChange="getSelectedValue(\'activity\')"><option value={null}>Selectionner une activite</option>' +
 			string.join() +
 			"</select></div>"
 		);
@@ -163,23 +165,3 @@ export function getNewHtml() {
 		return html;
 	}
 }
-
-//******************* Pick selected range from Google Sheet **************//
-
-// export function getSelectedRange(textFieldId) {
-// 	var selected = SpreadsheetApp.getActiveSheet().getActiveRange(); // Gets the selected range
-// 	var rangeString = selected.getA1Notation(); // converts it to the A1 type notation
-// 	SpreadsheetApp.getActive().setNamedRange(textFieldId, selected);
-// 	return rangeString;
-// }
-// //******************* Pick named range from Google Sheet **************//
-
-// export function generateNamedRanges() {
-// 	let main: Main = new Main();
-// 	// let spreadSheet = main.spreadsheet;
-// 	// let properties = main.properties;
-// 	// let sprintTable: SprintTable = main.sprintTable;
-// 	// let uxTable: UxWeekTable = main.weekTable;
-// 	// sprintTable.initialize("dev"); //TODO What append do i need this ?
-// 	// uxTable.initialize("ux"); //TODO What append do i need this ?
-// }

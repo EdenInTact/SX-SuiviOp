@@ -15,34 +15,25 @@ function doGet() {
 	AutoCRA.doGet();
 }
 
-// function setActivity() {
-// 	return AutoCRA.setActivity();
-// }
+function addDev() {
+	return AutoCRA.addDev();
+}
 
-// function addDev() {
-// 	return AutoCRA.addDev();
-// }
+function addUx() {
+	return AutoCRA.addUx();
+}
 
-// function addUx() {
-// 	return AutoCRA.addUx();
-// }
+function addSprint() {
+	return AutoCRA.addSprint();
+}
 
-// function addSprint() {
-// 	return AutoCRA.addSprint();
-// }
+function addRecette() {
+	return AutoCRA.addRecette();
+}
 
-// function addRecette() {
-// 	return AutoCRA.addRecette();
-// }
-
-// function addWeek() {
-// 	return AutoCRA.addWeek();
-// }
-
-// function getSelectedRange(textFieldId) {
-// 	return AutoCRA.getSelectedRange(textFieldId);
-// }
-
-// function generateNamedRanges() {
-// 	return AutoCRA.generateNamedRanges();
-// }
+function addWeek() {
+	return AutoCRA.addWeek();
+}
+function cleanTable() {
+	return AutoCRA.cleanTable();
+}

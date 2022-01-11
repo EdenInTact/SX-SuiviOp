@@ -100,8 +100,8 @@ export default class Main {
 			let resultAPI = api.getProjectByCode(this._properties.keyDev);
 
 			// 2. set phase and project property
-			let project = resultAPI["hydra:member"] && resultAPI["hydra:member"][0];
-			let phases = project?.projectPhases;
+			let project = resultAPI.code;
+			let phases = resultAPI.projectPhases;
 
 			this._properties._project = project;
 			this._properties._phases = phases;
@@ -191,28 +191,29 @@ export default class Main {
 		let resultAPI: any = api.getUsersTimesheetRow(
 			JSON.parse(this._properties.projectrow)
 		);
-		let users = [];
-		let timesheetRow: object[] = [];
-		resultAPI.map((eachRow: { timesheetRow: any[] }) => {
-			console.log(eachRow.timesheetRow);
-			timesheetRow.push({
-				[eachRow.timesheetRow[0].user]: eachRow.timesheetRow,
-			});
 
-			eachRow.timesheetRow.map((item) => {
-				users.push(item.user.toString());
+		//1.  set users dropdown
+		let responseUser = resultAPI.userArray.users;
+		let usersArrFrmted = Object.keys(responseUser).map((key) => {
+			return `${responseUser[key].name} - ${responseUser[key].function}`;
+		});
+
+		main.weekTable.setNameDropdown(usersArrFrmted);
+		main.sprintTable.setNameDropdown(usersArrFrmted);
+
+		//2. merge and save time sheet row on script proprieties
+		let responseTimesheetRow = resultAPI?.timesheetRow["hydra:member"];
+		
+		let timesheetRowArr = [];
+		responseTimesheetRow.map((each) => {
+			each.timesheetRow.map((item) => {
+				timesheetRowArr.push(item);
 			});
 		});
 
-		let filteredUsersArray = users.filter(
-			(ele, pos) => users.indexOf(ele) === pos
-		);
-		main.weekTable.setNameDropdown(filteredUsersArray, 13);
-		main.sprintTable.setNameDropdown(filteredUsersArray, 24);
-
 		return PropertiesService.getScriptProperties().setProperty(
 			"projectrow",
-			JSON.stringify(timesheetRow)
+			JSON.stringify(timesheetRowArr)
 		);
 	}
 
@@ -223,20 +224,20 @@ export default class Main {
 		let main = new Main();
 
 		// retrieve year and month from properties
-		const timeStart: Date = new Date(
-			this._properties.time.start.year,
-			this._properties.time.start.month,
-			this._properties.time.start.day
-		);
+		const timeStart =
+			this._properties.time.start.year +
+			"" +
+			("0" + this._properties.time.start.month).slice(-2) +
+			"" +
+			("0" + this._properties.time.start.day).slice(-2);
 
-		let timeEnd: Date;
-		if (this._properties.time.end.month && this._properties.time.end.year) {
-			timeEnd = new Date(
-				this._properties.time.end.year,
-				this._properties.time.end.month,
-				this._properties.time.end.day
-			);
-		}
+		let timeEnd =
+			this._properties.time.end.year +
+			"" +
+			("0" + this._properties.time.end.month).slice(-2) +
+			"" +
+			("0" + this._properties.time.end.day).slice(-2);
+		// }
 		let timesheetRow = main._properties.projectrow;
 
 		if (this._isSprint) {
@@ -244,5 +245,32 @@ export default class Main {
 		} else {
 			this._weekTable.setWorkDays(timesheetRow, timeStart, timeEnd);
 		}
+	}
+
+	 cleanTable(){
+		let main = new Main();
+		let spreadsheet = main.spreadsheet;
+	
+		let firstRow = spreadsheet.suiviSheet
+		.createTextFinder("CONSOMMÉ EN JOURS DEV")
+		.findNext()
+		.getRow();
+
+		let lastRow = spreadsheet.suiviSheet
+		.getRange(firstRow, 1, 100, 1)
+		.createTextFinder("TOTAL")
+		.findNext()
+		.getRow();
+	
+		console.log('lastRow', lastRow)
+		let lastColData = spreadsheet.dataSheet.getLastColumn();
+	
+		let range = spreadsheet.suiviSheet.getRange(
+			firstRow + 3,
+			2,
+			lastRow -firstRow - 4,
+			lastColData-2
+		);
+		range.setValue(null)
 	}
 }

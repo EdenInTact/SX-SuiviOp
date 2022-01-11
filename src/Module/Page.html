@@ -13,6 +13,9 @@
           width: 100%;
           justify-items: center;
         }
+        .project-title{
+            font-size: 20px;
+        }
       </style>
 
 </head>
@@ -20,16 +23,17 @@
 <div class="p-3">
 
     <!-- ******* Project ****** -->
-    <div class="block form-group">
-        <label for="project" class='textarea'><b>Projet</b></label>
+    <div class="block form-group text-center mb-2">
+        <label for="project" class="textarea"><b>Projet</b></label>
         <? 
         var main = new Main();
         var project = JSON.parse(main.properties._project) ?>
-        <p class='h4'><?= project.label ?></p>
+        <p class='project-title mb-3'><?= project ?></p>
     </div>
     <!-- ******* Phase ****** -->
     <div class="btn mb-3">
-        <label for="phases"><b>Phase du projet</b></label>
+    <? if(main.properties._activity === 'undefined'){?>
+        <label for="phases" class="mb-2"><b>Phase du projet</b></label>
         <select class="form-select form-select-lg mb-3" name="phases" id="phases" onChange="getSelectedValue('phases')">
         <option value={null}>Selectionner une phase</option>
         <? 
@@ -38,19 +42,23 @@
         <option value="<?= i ?>"><?= phases[i].label ?></option>
         <? } ?>
         </select>
+    <? } ?>
+
     </div>
 
 
     <? if(main.properties._activity !== 'undefined'){?>
         <?!= setActivityHTML() ?>
     <? } ?>
-    <div id="spinner"><p>Loading modal dialog...</p></div>
 
-    <button type="button" class="btn btn-primary" id="refresh" onclick ="google.script.run.withSuccessHandler(refreshApp).getNewHtml()">
-    Continuer
-    </button>
+    <div class="text-center">
+        <button type="button" class="btn btn-primary mb-3 btn-lg" id="refresh" onclick ="loading();google.script.run.withSuccessHandler(refreshApp).getNewHtml();">
+        Continuer
+        </button>
+    </div>
 
-    <div id="loader"></div>
+    <div id="loader" class="text-center"></div>
+
     <script>
         function getSelectedValue(type){
             var div = document.getElementById('loader');
@@ -62,6 +70,7 @@
 
         }
 
+
         function refreshApp(newHtml) {
         document.open();
         document.write(newHtml);
@@ -71,6 +80,11 @@
       function loader(){
         var div = document.getElementById('loader');
             div.innerHTML = ''
+      }
+
+      function loading(){
+        var div = document.getElementById('loader');
+            div.innerHTML = 'Loading...'
       }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
