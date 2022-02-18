@@ -203,7 +203,7 @@ export default class Main {
 
 		//2. merge and save time sheet row on script proprieties
 		let responseTimesheetRow = resultAPI?.timesheetRow["hydra:member"];
-		
+
 		let timesheetRowArr = [];
 		responseTimesheetRow.map((each) => {
 			each.timesheetRow.map((item) => {
@@ -247,30 +247,30 @@ export default class Main {
 		}
 	}
 
-	 cleanTable(){
+	cleanTable() {
 		let main = new Main();
 		let spreadsheet = main.spreadsheet;
-	
+
 		let firstRow = spreadsheet.suiviSheet
-		.createTextFinder("CONSOMMÉ EN JOURS DEV")
-		.findNext()
-		.getRow();
+			.createTextFinder("CONSOMMÉ EN JOURS DEV")
+			.findNext()
+			.getRow();
 
 		let lastRow = spreadsheet.suiviSheet
-		.getRange(firstRow, 1, 100, 1)
-		.createTextFinder("TOTAL")
-		.findNext()
-		.getRow();
-	
-		console.log('lastRow', lastRow)
+			.getRange(firstRow, 1, 100, 1)
+			.createTextFinder("TOTAL")
+			.findNext()
+			.getRow();
+
+		console.log("lastRow", lastRow);
 		let lastColData = spreadsheet.dataSheet.getLastColumn();
-	
+
 		let range = spreadsheet.suiviSheet.getRange(
 			firstRow + 3,
 			2,
-			lastRow -firstRow - 4,
-			lastColData-2
+			lastRow - firstRow - 4,
+			lastColData - 2
 		);
-		range.setValue(null)
+		range.setValue(null);
 	}
 }

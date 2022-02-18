@@ -3,6 +3,7 @@ import SpreadSheet from "../utils/SpreadSheet";
 import ProjectProperties from "../utils/ProjectProperties";
 import Main from "../../Actions";
 import { Consultant, Iteration, Props } from "../../Types";
+import API from "../../API/request";
 let ss = SpreadsheetApp.getActive();
 
 export default abstract class AbstractTable {
@@ -235,6 +236,10 @@ export default abstract class AbstractTable {
 	}
 
 	setWorkDays(timesheetRow: string, timeStart: string, timeEnd: string) {
+		let api = new API();
+
+		let project_code = ss.getRange("F2").getValue();
+
 		let consultantArray = [];
 		//1. get row and name of each consultant
 		this.props.consultants.list.map((each) => {
@@ -246,11 +251,14 @@ export default abstract class AbstractTable {
 				.getValue();
 			if (eachConsultant) {
 				consultantArray.push({
-					user: eachConsultant,
+					user: eachConsultant.split("-")[0].trim(),
 					row: this.props.corner.top.left.getRow() + each.name.row,
 				});
 			}
 		});
+
+		let resultAPI = api.getAllTimeSheetRow(project_code, timeStart, timeEnd);
+		let responseTimesheetRow = resultAPI?.["hydra:member"];
 
 		//2. get column of sprint
 		let range = this._spreadsheet.suiviSheet.getRange(
@@ -265,39 +273,33 @@ export default abstract class AbstractTable {
 			.findNext()
 			.getColumn();
 
-		//3. filter timesheet row to keep only who's between start and end time
 		let workerTimeArray = [];
-		let timesheeRowArr = JSON.parse(timesheetRow);
-
-		let timesheetFltr = timesheeRowArr.filter((item) => {
-			let dateTime = item.dateTime.split("-").join("");
-			return dateTime <= timeEnd && dateTime >= timeStart;
-		});
-
-		//4. create a array with row, user name and qty worked
-		consultantArray.forEach((consultant) => {
-			let userName = consultant.user.split("-")[0].toString();
+		consultantArray.map((consultant) => {
 			let workertimesheet = [];
-			timesheetFltr.map((timesheet) => {
-				if (timesheet.userName.indexOf(userName)) {
+			responseTimesheetRow.map((timeSheet, i) => {
+				if (
+					timeSheet.userName.trim() === consultant.user.split("-")[0].trim()
+				) {
 					workertimesheet.push({
 						row: consultant.row,
-						qty: timesheet.qty,
-						user: userName,
-						date: timesheet.dateTime,
+						qty: timeSheet.qty,
+						user: timeSheet.userName.trim(),
+						date: timeSheet.dateTime,
 					});
 				}
 			});
-
 			workertimesheet.length > 0
 				? workerTimeArray.push(workertimesheet)
 				: workerTimeArray.push([
-						{ row: consultant.row, qty: 0, user: userName },
+						{
+							row: consultant.row,
+							qty: 0,
+							user: consultant.user.split("-")[0].trim(),
+						},
 				  ]);
 		});
 
-
-		//5. setvalue of day worked for each 
+		// 5. setvalue of day worked for each
 		workerTimeArray.forEach((workerInfo) => {
 			let qty = 0;
 			let rowWorker;

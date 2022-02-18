@@ -39,6 +39,21 @@ export default class API {
 		return { timesheetRow: JSON.parse(resp), userArray: JSON.parse(userArray) };
 	}
 
+	getUsersByProject(projectCode): object {
+		this.authenticate();
+		let options: any = {
+			method: "get",
+			headers: { Authorization: `Bearer ${this._token}` },
+		};
+
+		let userArray = UrlFetchApp.fetch(
+			`${this._apiPath}api/projects/code/${projectCode}/users`,
+			options
+		);
+
+		return { userArray: JSON.parse(userArray) };
+	}
+
 	getProjectByCode(codeProject): any {
 		this.authenticate();
 		let options: any = {
@@ -47,6 +62,24 @@ export default class API {
 		};
 		let response = UrlFetchApp.fetch(
 			`${this._apiPath}api/projects/code/${codeProject}`,
+			options
+		);
+		let result = JSON.parse(response.getContentText());
+		return result;
+	}
+
+	getAllTimeSheetRow(
+		codeProject: string,
+		date_debut: string,
+		date_fin: string
+	) {
+		this.authenticate();
+		let options: any = {
+			method: "get",
+			headers: { Authorization: `Bearer ${this._token}` },
+		};
+		let response = UrlFetchApp.fetch(
+			`${this._apiPath}api/projects/code/${codeProject}/timesheet_rows?dateTime%5Bbefore%5D=${date_fin}&dateTime%5Bafter%5D=${date_debut}`,
 			options
 		);
 

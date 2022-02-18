@@ -46,14 +46,13 @@ export default class Menu {
 
 	addSprint() {}
 	addWeek() {}
-	cleanTable(){}
+	cleanTable() {}
 }
 
 export function addDev() {
 	let devNames = ss.getRangeByName("devsNames");
 	let lastRow = devNames.getLastRow();
 	let firstRow = devNames.getRow();
-	console.log("devNames", devNames);
 
 	ss.getActiveSheet().insertRowAfter(lastRow);
 	let col = ss.getRangeByName("sprintDev").getColumn();
@@ -419,7 +418,6 @@ function updateFromBacklog(formulas: string[][], increment) {
 }
 
 function updateTable(sheet, textFinder, delimiter, recette?) {
-	console.log("textFinder", textFinder);
 	let firstRow = sheet.createTextFinder(textFinder).findNext().getRow();
 	let lastCol = sheet
 		.getRange(firstRow, 1, 1, sheet.getLastColumn())
@@ -427,7 +425,6 @@ function updateTable(sheet, textFinder, delimiter, recette?) {
 		.matchCase(true)
 		.findNext()
 		.getColumn();
-	console.log("delimiter", delimiter);
 
 	let lastRow = sheet
 		.getRange(firstRow, 1, 100, 1)
@@ -499,8 +496,6 @@ function updateTable(sheet, textFinder, delimiter, recette?) {
 		});
 	}
 }
-
-
 
 export function columnToLetter(column) {
 	var temp,

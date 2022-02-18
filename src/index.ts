@@ -1,5 +1,6 @@
 import Main from "./Actions";
 import Menu from "./Menu";
+import API from "./API/request";
 
 let ss = SpreadsheetApp.getActive();
 
@@ -43,8 +44,7 @@ export function atChange(e): void {
 
 export function doGet() {
 	const main = new Main();
-	const menu = new Menu();
-	main.setProperties();
+	console.log("Initialisation");
 
 	// 1. Delete all previous information from property
 	PropertiesService.getScriptProperties().setProperty("activity", "undefined");
@@ -57,16 +57,53 @@ export function doGet() {
 	ss.getRange("F4").setValue(null);
 	main.weekTable.setNameDropdown("");
 	main.sprintTable.setNameDropdown("");
-	
+
 	//3. Delete all time information of the sheet
-	main.cleanTable()
+	main.cleanTable();
 
-	// 4. Open Side bar
-	var html = HtmlService.createTemplateFromFile("src/Module/Page")
-		.evaluate()
-		.setTitle("Initier l'automatisation");
+	main.setProperties();
+	if (ss.getRange("H2").isChecked()) {
+		let api = new API();
+		let spreadsheet = main.spreadsheet;
+		let firstRow = spreadsheet.suiviSheet
+			.createTextFinder("CONSOMMÉ EN JOURS DEV")
+			.findNext()
+			.getRow();
 
-	SpreadsheetApp.getUi().showSidebar(html);
+		let project_code = ss.getRange("F2").getValue();
+		let date_start = ss.getRange(`B${firstRow + 1}`).getValue();
+		var date = new Date(date_start),
+			mnth = ("0" + (date.getMonth() + 1)).slice(-2),
+			day = ("0" + date.getDate()).slice(-2);
+		// let start_date = [date.getFullYear(), mnth, day].join("-");
+		// let end_date = [date.getFullYear() + 5, mnth, day].join("-");
+
+		//4. Launch search
+		// let resultAPI = api.getAllTimeSheetRow(project_code, start_date, end_date);
+		let resultUserAPI: any = api.getUsersByProject(project_code);
+
+		let responseUser = resultUserAPI.userArray.users;
+		let usersArrFrmted = Object.keys(responseUser).map((key) => {
+			return `${responseUser[key].name} - ${responseUser[key].function}`;
+		});
+
+		main.weekTable.setNameDropdown(usersArrFrmted);
+		main.sprintTable.setNameDropdown(usersArrFrmted);
+		// console.log("resultAPI", JSON.stringify(resultAPI, null, 2));
+
+		// let responseTimesheetRow = resultAPI?.["hydra:member"];
+
+		// return PropertiesService.getScriptProperties().setProperty(
+		// 	"projectrow",
+		// 	JSON.stringify(responseTimesheetRow)
+		// );
+	} else {
+		// 4. Open Side bar
+		var html = HtmlService.createTemplateFromFile("src/Module/Page")
+			.evaluate()
+			.setTitle("Initier l'automatisation");
+		SpreadsheetApp.getUi().showSidebar(html);
+	}
 }
 
 //******************* Automatisation **************//
@@ -128,12 +165,12 @@ export function setActivityHTML() {
 		let activityArray = activity.projectActivity;
 		let string = [];
 
-		activityArray.forEach(element => {
+		activityArray.forEach((element, index) => {
 			string.push(
 				"<option value='" +
-				element.toString() +
+					index.toString() +
 					"'>" +
-					activityArray[element].label.toString() +
+					element.label.toString() +
 					"</option>"
 			);
 		});
