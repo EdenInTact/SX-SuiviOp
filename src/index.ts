@@ -11,7 +11,6 @@ export function atOpen(): void {
 	SpreadsheetApp.getUi()
 		.createMenu("Automatisation")
 		.addItem("Initialiser l'automatisation du suivi opérationnel", "doGet")
-		.addItem("Démarrer l'automatisation !", "trigger")
 		.addToUi();
 }
 
@@ -75,11 +74,6 @@ export function doGet() {
 		var date = new Date(date_start),
 			mnth = ("0" + (date.getMonth() + 1)).slice(-2),
 			day = ("0" + date.getDate()).slice(-2);
-		// let start_date = [date.getFullYear(), mnth, day].join("-");
-		// let end_date = [date.getFullYear() + 5, mnth, day].join("-");
-
-		//4. Launch search
-		// let resultAPI = api.getAllTimeSheetRow(project_code, start_date, end_date);
 		let resultUserAPI: any = api.getUsersByProject(project_code);
 
 		let responseUser = resultUserAPI.userArray.users;
@@ -89,16 +83,7 @@ export function doGet() {
 
 		main.weekTable.setNameDropdown(usersArrFrmted);
 		main.sprintTable.setNameDropdown(usersArrFrmted);
-		// console.log("resultAPI", JSON.stringify(resultAPI, null, 2));
-
-		// let responseTimesheetRow = resultAPI?.["hydra:member"];
-
-		// return PropertiesService.getScriptProperties().setProperty(
-		// 	"projectrow",
-		// 	JSON.stringify(responseTimesheetRow)
-		// );
 	} else {
-		// 4. Open Side bar
 		var html = HtmlService.createTemplateFromFile("src/Module/Page")
 			.evaluate()
 			.setTitle("Initier l'automatisation");
@@ -127,7 +112,7 @@ export function trigger() {
 
 export function setPhases(phaseIndex, phaseText) {
 	const main = new Main();
-	const phases = JSON.parse(main.properties._phases);
+	const phases = JSON.parse(main.properties._phases.toString());
 
 	// 1. Write phases on sheet
 	ss.getRange("F3").setValue(phaseText);
@@ -143,7 +128,7 @@ export function setActivity(activityIndex, ActivityText) {
 	const main = new Main();
 
 	// 1. write activity on sheet
-	const activity = JSON.parse(main.properties._activity);
+	const activity = JSON.parse(main.properties._activity.toString());
 	ss.getRange("F4").setValue(ActivityText);
 
 	// 2. set property projectrow compared of activity chosen
@@ -161,7 +146,7 @@ export function setActivityHTML() {
 	// Write activity dropdown
 
 	if (main.properties._activity) {
-		const activity = JSON.parse(main.properties._activity);
+		const activity = JSON.parse(main.properties._activity.toString());
 		let activityArray = activity.projectActivity;
 		let string = [];
 
