@@ -7,7 +7,7 @@ let ss = SpreadsheetApp.getActive();
 //************** Trigger on spreadSheet open *********//
 //************** => use to creat custom menu *********//
 
-export function atOpen(): void {
+export function onOpen(): void {
   SpreadsheetApp.getUi()
     .createMenu("Automatisation")
     .addItem("Initialiser l'automatisation du suivi opérationnel", "doGet")
@@ -125,7 +125,7 @@ export function setPhases(phaseIndex, phaseText) {
 }
 
 export function setActivity(activityIndex, ActivityText) {
-  const main = new Main();
+  const main: Main = new Main();
 
   // 1. write activity on sheet
   const activity = JSON.parse(main.properties._activity.toString());
@@ -148,7 +148,7 @@ export function setActivityHTML() {
   if (main.properties._activity) {
     const activity = JSON.parse(main.properties._activity.toString());
     let activityArray = activity.projectActivity;
-    let string = [];
+    let string: String[] = [];
 
     activityArray.forEach((element, index) => {
       string.push(
