@@ -3,7 +3,7 @@
   "dependencies": {
     "libraries": [
       {
-        "userSymbol": "AutoCRA2",
+        "userSymbol": "AutoCRA",
         "libraryId": "1GnOqVyfXb65Pq1RQ6KrKL8nEpZaxj1W6-dEJ7rFo6cALFVVuEDLJOkrA",
         "version": "17"
       }
