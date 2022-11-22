@@ -2,6 +2,8 @@ export default class API {
   private _username: string = "app_script";
   private _password: string = "seE@^@EXvvSziqNfwD*8K!FbYh7rzN";
   private _apiPath: string = "https://sxintact.atecna.fr/";
+  // private _password: string = "2*fKv4q8sp^rxgRz&FEBf9otD%vL##";
+  // private _apiPath: string = "https://sx-intact.atecna.fr/";
   private _token: string;
 
   authenticate(): string {
@@ -15,6 +17,7 @@ export default class API {
 
     let url = `${this._apiPath}authentication_token`;
     let response = UrlFetchApp.fetch(url, options);
+    console.log("Coucou", response.getContentText());
     this._token = JSON.parse(response.getContentText()).token;
     return this._token;
   }
